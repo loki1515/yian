@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怡安救護站 · 工區救護站班表系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+
+<!-- ============================================================= -->
+<!--  資料區 (SEED DATA)                                            -->
+<!--  ※ 進階使用者可直接修改下方 JSON;一般使用請用畫面右上「編輯」 -->
+<!-- ============================================================= -->
+<script type="application/json" id="seed-data">
+{
+  "company": {
+    "name": "怡安救護站",
+    "subtitle": "工區救護站 · 班表與管理規定系統"
+  },
+  "stations": [
+    {
+      "id": "st-a",
+      "name": "A 工區救護站",
+      "tag": "24 小時駐站",
+      "location": "新北市 ○○ 工區 1 號門旁",
+      "supervisor": "王大明",
+      "phone": "0912-345-678",
+      "note": "本站配置 EMT-1 二名,救護車一台,AED 兩台。交接班務必清點藥品與耗材。",
+      "rows": [
+        { "label": "日班", "time": "08:00 – 20:00", "cells": ["王大明", "王大明", "李志成", "李志成", "王大明", "陳怡君", "陳怡君"] },
+        { "label": "夜班", "time": "20:00 – 08:00", "cells": ["林信宏", "林信宏", "張嘉文", "張嘉文", "林信宏", "黃柏翰", "黃柏翰"] }
+      ]
+    },
+    {
+      "id": "st-b",
+      "name": "B 工區救護站",
+      "tag": "日間駐站",
+      "location": "桃園市 ○○ 工區 中央倉儲區",
+      "supervisor": "李志成",
+      "phone": "0922-111-222",
+      "note": "僅日間施工時段駐站,假日視工程進度調整,異動由主管前一日 17:00 前公告。",
+      "rows": [
+        { "label": "早班", "time": "07:00 – 15:00", "cells": ["吳承恩", "吳承恩", "蔡明哲", "蔡明哲", "吳承恩", "—", "—"] },
+        { "label": "中班", "time": "15:00 – 23:00", "cells": ["許雅婷", "許雅婷", "周建宏", "周建宏", "許雅婷", "—", "—"] }
+      ]
+    }
+  ],
+  "regulations": [
+    {
+      "title": "出勤與交接班",
+      "items": [
+        "依班表準時到站,需提前 15 分鐘完成交接班程序。",
+        "交接時逐項清點救護車裝備、藥品、耗材與 AED 電量,並於交接本簽名。",
+        "請假須於 24 小時前提出,緊急狀況立即電話通報所屬主管。",
+        "未經核准不得擅自調班或代班,調代班須雙方與主管三方同意。"
+      ]
+    },
+    {
+      "title": "現場勤務規範",
+      "items": [
+        "駐站期間維持儀容整潔,著公司制服並配戴識別證。",
+        "接獲通報後依標準作業流程出勤,並完整填寫救護紀錄表。",
+        "嚴禁於勤務時間飲酒、離站脫崗或從事與職務無關事項。",
+        "與工區安衛人員保持聯繫,熟悉工區地形與緊急後送路線。"
+      ]
+    },
+    {
+      "title": "安全與通報",
+      "items": [
+        "發生重大傷病或群傷事件,立即啟動緊急應變並通報主管與 119。",
+        "每日檢查通訊設備,確保對講機、手機暢通。",
+        "裝備、藥品短缺或損壞,當班即時回報並登記。"
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+:root{
+  --coral:#E07A82; --coral-deep:#C75F68;
+  --teal:#34BCB4;  --teal-deep:#1F9E97;
+  --ink:#2C3340;   --slate:#5B6472;  --muted:#9AA3B2;
+  --bg:#F3F5F8;     --card:#FFFFFF;   --line:#E5E9EF;  --line-soft:#EEF1F5;
+  --shadow:0 1px 2px rgba(44,51,64,.04), 0 8px 24px rgba(44,51,64,.06);
+  --shadow-lg:0 4px 12px rgba(44,51,64,.08), 0 18px 48px rgba(44,51,64,.10);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Noto Sans TC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink);
+  line-height:1.65; -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+body::before{ /* subtle ambient backdrop */
+  content:""; position:fixed; inset:0; z-index:-1;
+  background:
+    radial-gradient(900px 500px at 88% -8%, rgba(52,188,180,.10), transparent 60%),
+    radial-gradient(800px 500px at -5% 110%, rgba(224,122,130,.10), transparent 60%);
+  pointer-events:none;
+}
+h1,h2,h3,.serif{font-family:"Noto Serif TC",serif;}
+
+/* ---------- Header ---------- */
+header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(255,255,255,.82); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+header .accent{height:4px;background:linear-gradient(90deg,var(--coral),var(--teal));}
+.head-inner{
+  max-width:1280px; margin:0 auto; padding:14px 28px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:13px;}
+.brand img{width:46px;height:46px;border-radius:12px;object-fit:contain;
+  background:#fff;padding:5px;box-shadow:var(--shadow);}
+.brand .txt h1{font-size:1.32rem;font-weight:900;letter-spacing:.5px;line-height:1.1;}
+.brand .txt .sub{font-size:.74rem;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.head-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.date-chip{
+  font-size:.78rem;color:var(--slate);background:var(--line-soft);
+  padding:8px 14px;border-radius:999px;font-variant-numeric:tabular-nums;
+}
+.btn{
+  font-family:inherit;font-size:.84rem;font-weight:700;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  padding:9px 16px;border-radius:10px;transition:.18s ease;display:inline-flex;
+  align-items:center;gap:7px;white-space:nowrap;
+}
+.btn:hover{border-color:var(--teal);color:var(--teal-deep);transform:translateY(-1px);}
+.btn.primary{background:linear-gradient(135deg,var(--teal),var(--teal-deep));
+  color:#fff;border:none;box-shadow:0 6px 16px rgba(31,158,151,.30);}
+.btn.primary:hover{color:#fff;filter:brightness(1.05);}
+.btn.warm{background:linear-gradient(135deg,var(--coral),var(--coral-deep));
+  color:#fff;border:none;box-shadow:0 6px 16px rgba(199,95,104,.28);}
+.btn.warm:hover{color:#fff;filter:brightness(1.05);}
+.btn svg{width:15px;height:15px;}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1280px;margin:0 auto;padding:26px 28px 60px;
+  display:grid;grid-template-columns:268px 1fr;gap:26px;}
+
+/* ---------- Sidebar ---------- */
+aside{position:sticky;top:96px;align-self:start;}
+.side-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px;}
+.side-label{font-size:.7rem;font-weight:700;letter-spacing:2px;color:var(--muted);
+  padding:6px 10px 10px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;
+  cursor:pointer;transition:.15s;border:1px solid transparent;position:relative;}
+.nav-item:hover{background:var(--line-soft);}
+.nav-item.active{background:linear-gradient(135deg,rgba(224,122,130,.12),rgba(52,188,180,.12));
+  border-color:rgba(52,188,180,.35);}
+.nav-item .dot{width:9px;height:9px;border-radius:50%;flex:none;
+  background:var(--teal);box-shadow:0 0 0 3px rgba(52,188,180,.18);}
+.nav-item.warm-dot .dot{background:var(--coral);box-shadow:0 0 0 3px rgba(224,122,130,.18);}
+.nav-item .name{font-weight:700;font-size:.92rem;flex:1;}
+.nav-item .name small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);margin-top:1px;}
+.nav-item .del{display:none;border:none;background:none;color:var(--coral-deep);
+  cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:6px;}
+.nav-item .del:hover{background:rgba(224,122,130,.15);}
+body.editing .nav-item .del{display:block;}
+.nav-divider{height:1px;background:var(--line);margin:10px 4px;}
+.add-row{display:none;width:100%;justify-content:center;margin-top:6px;
+  border-style:dashed;color:var(--slate);}
+body.editing .add-row{display:flex;}
+
+/* ---------- Main ---------- */
+main{min-width:0;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:30px 32px;margin-bottom:22px;}
+.station-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line-soft);padding-bottom:22px;margin-bottom:22px;}
+.station-head .title-wrap{flex:1;min-width:200px;}
+.station-head h2{font-size:1.75rem;font-weight:900;display:flex;align-items:center;
+  gap:12px;flex-wrap:wrap;}
+.tag{font-family:"Noto Sans TC";font-size:.72rem;font-weight:700;letter-spacing:.5px;
+  padding:5px 12px;border-radius:999px;
+  background:rgba(52,188,180,.14);color:var(--teal-deep);}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;}
+.meta .item{font-size:.86rem;color:var(--slate);}
+.meta .item b{display:block;font-size:.7rem;color:var(--muted);font-weight:700;
+  letter-spacing:1px;margin-bottom:3px;text-transform:uppercase;}
+.note-box{background:linear-gradient(180deg,rgba(224,122,130,.06),rgba(224,122,130,.02));
+  border-left:3px solid var(--coral);border-radius:0 10px 10px 0;
+  padding:12px 16px;font-size:.88rem;color:var(--slate);}
+
+.section-title{font-size:1.05rem;font-weight:900;font-family:"Noto Serif TC";
+  display:flex;align-items:center;gap:10px;margin:4px 0 16px;}
+.section-title::before{content:"";width:5px;height:18px;border-radius:3px;
+  background:linear-gradient(var(--coral),var(--teal));}
+
+/* ---------- Schedule table ---------- */
+.table-scroll{overflow-x:auto;border-radius:12px;border:1px solid var(--line);}
+table{width:100%;border-collapse:collapse;min-width:720px;font-size:.9rem;}
+thead th{background:var(--ink);color:#fff;font-weight:700;font-size:.8rem;
+  letter-spacing:.5px;padding:13px 10px;text-align:center;}
+thead th:first-child{text-align:left;padding-left:18px;}
+thead th.weekend{background:#3a4150;}
+tbody td{padding:11px 10px;text-align:center;border-top:1px solid var(--line-soft);
+  color:var(--slate);font-variant-numeric:tabular-nums;}
+tbody tr:nth-child(even){background:#FAFBFC;}
+tbody td.shift{text-align:left;padding-left:18px;}
+.shift .sname{font-weight:700;color:var(--ink);}
+.shift .stime{font-size:.74rem;color:var(--muted);}
+tbody td.weekend{background:rgba(224,122,130,.045);}
+tbody tr:nth-child(even) td.weekend{background:rgba(224,122,130,.075);}
+.person{font-weight:500;color:var(--ink);}
+
+/* ---------- Regulations ---------- */
+.reg-section{margin-bottom:26px;}
+.reg-section:last-child{margin-bottom:0;}
+.reg-list{list-style:none;margin-top:4px;}
+.reg-list li{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);
+  font-size:.92rem;color:var(--slate);align-items:flex-start;}
+.reg-list li:last-child{border-bottom:none;}
+.reg-list .num{flex:none;width:24px;height:24px;border-radius:7px;font-size:.74rem;
+  font-weight:700;display:flex;align-items:center;justify-content:center;
+  background:rgba(52,188,180,.14);color:var(--teal-deep);margin-top:1px;}
+
+/* ---------- Edit mode inputs ---------- */
+.edit-only{display:none;}
+body.editing .edit-only{display:inline-flex;}
+input.f, textarea.f{font-family:inherit;font-size:inherit;color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;
+  width:100%;transition:.15s;}
+input.f:focus, textarea.f:focus{outline:none;border-color:var(--teal);
+  box-shadow:0 0 0 3px rgba(52,188,180,.15);}
+textarea.f{resize:vertical;min-height:54px;line-height:1.55;}
+.cell-in{text-align:center;}
+.mini-btn{border:1px solid var(--line);background:#fff;color:var(--slate);
+  cursor:pointer;border-radius:8px;padding:6px 11px;font-size:.78rem;font-weight:700;
+  font-family:inherit;transition:.15s;}
+.mini-btn:hover{border-color:var(--teal);color:var(--teal-deep);}
+.mini-btn.danger:hover{border-color:var(--coral);color:var(--coral-deep);}
+.row-tools{display:flex;gap:8px;margin-top:12px;}
+.edit-banner{display:none;background:linear-gradient(135deg,rgba(224,122,130,.12),rgba(52,188,180,.12));
+  border:1px solid rgba(52,188,180,.3);border-radius:12px;padding:12px 18px;
+  margin-bottom:20px;font-size:.85rem;color:var(--slate);align-items:center;gap:10px;}
+body.editing .edit-banner{display:flex;}
+.edit-banner b{color:var(--teal-deep);}
+
+.field-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:6px;}
+.field-grid label{font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.5px;
+  display:block;margin-bottom:5px;}
+
+/* footer */
+.foot{text-align:center;color:var(--muted);font-size:.76rem;padding:10px;}
+
+/* ---------- Responsive ---------- */
+@media(max-width:880px){
+  .wrap{grid-template-columns:1fr;}
+  aside{position:static;}
+  .panel{padding:22px 18px;}
+  .field-grid{grid-template-columns:1fr;}
+}
+
+/* ---------- Print ---------- */
+@media print{
+  header,aside,.head-actions,.edit-banner,.edit-only,.row-tools,.add-row,.foot{display:none!important;}
+  body{background:#fff;}
+  body::before{display:none;}
+  .wrap{display:block;padding:0;}
+  .panel{box-shadow:none;border:1px solid #ccc;break-inside:avoid;}
+}
+
+/* entrance animation */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.panel,.side-card{animation:rise .5s ease both;}
+aside{animation-delay:.05s;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="accent"></div>
+  <div class="head-inner">
+    <div class="brand">
+      <img id="brand-logo" alt="怡安救護站 LOGO"
+        src="data:image/jpeg;base64,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">
+      <div class="txt">
+        <h1 id="co-name">怡安救護站</h1>
+        <div class="sub" id="co-sub">工區救護站 · 班表與管理規定系統</div>
+      </div>
+    </div>
+    <div class="head-actions">
+      <div class="date-chip" id="today"></div>
+      <button class="btn" onclick="window.print()" title="列印目前頁面">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        列印
+      </button>
+      <button class="btn" id="edit-toggle" onclick="toggleEdit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+        編輯
+      </button>
+      <button class="btn primary" onclick="downloadHTML()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        下載最新檔案
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="side-card">
+      <div class="side-label">救護站列表</div>
+      <div id="nav-stations"></div>
+      <button class="btn add-row" onclick="addStation()">＋ 新增救護站</button>
+      <div class="nav-divider"></div>
+      <div class="side-label">管理文件</div>
+      <div id="nav-rules"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="edit-banner">
+      ✏️ <span><b>編輯模式</b>已開啟,直接修改欄位內容即可。完成後請按右上角「<b>下載最新檔案</b>」儲存成新的網頁檔。</span>
+    </div>
+    <div id="content"></div>
+    <div class="foot">怡安救護站 · 內部管理系統雛形　|　資料僅儲存於本檔案,修改後請務必下載保存</div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   怡安救護站 班表系統  ——  核心程式
+   STATE 為唯一資料來源;畫面由 STATE 渲染;下載時把 STATE 寫回檔案。
+   ============================================================ */
+const WEEK = ["週一","週二","週三","週四","週五","週六","週日"];
+let STATE, editMode = false, current = { type:"station", id:null };
+
+/* 讀取種子資料 */
+function loadState(){
+  try{ STATE = JSON.parse(document.getElementById("seed-data").textContent); }
+  catch(e){ STATE = { company:{name:"怡安救護站",subtitle:""}, stations:[], regulations:[] }; }
+  if(!current.id && STATE.stations.length) current = { type:"station", id:STATE.stations[0].id };
+}
+
+/* 今日日期 */
+function setToday(){
+  const d = new Date(), wd = ["日","一","二","三","四","五","六"][d.getDay()];
+  document.getElementById("today").textContent =
+    `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日　星期${wd}`;
+}
+
+/* ---------- 渲染:側欄 ---------- */
+function renderSidebar(){
+  const nav = document.getElementById("nav-stations");
+  nav.innerHTML = "";
+  STATE.stations.forEach(s=>{
+    const el = document.createElement("div");
+    el.className = "nav-item" + (current.type==="station"&&current.id===s.id?" active":"");
+    el.innerHTML = `<span class="dot"></span>
+      <span class="name">${esc(s.name)}<small>${esc(s.tag||"")}</small></span>
+      <button class="del" title="刪除此站">✕</button>`;
+    el.querySelector(".name").onclick = ()=>{ current={type:"station",id:s.id}; render(); };
+    el.querySelector(".dot").onclick = ()=>{ current={type:"station",id:s.id}; render(); };
+    el.querySelector(".del").onclick = (ev)=>{ ev.stopPropagation(); removeStation(s.id); };
+    nav.appendChild(el);
+  });
+
+  const rules = document.getElementById("nav-rules");
+  rules.innerHTML = "";
+  const r = document.createElement("div");
+  r.className = "nav-item warm-dot" + (current.type==="rules"?" active":"");
+  r.innerHTML = `<span class="dot"></span><span class="name">管理規定<small>共用規範</small></span>`;
+  r.onclick = ()=>{ current={type:"rules"}; render(); };
+  rules.appendChild(r);
+}
+
+/* ---------- 渲染:主內容 ---------- */
+function render(){
+  renderSidebar();
+  const c = document.getElementById("content");
+  c.innerHTML = "";
+  if(current.type==="rules"){ c.appendChild(renderRules()); }
+  else{
+    const s = STATE.stations.find(x=>x.id===current.id) || STATE.stations[0];
+    if(s){ current={type:"station",id:s.id}; c.appendChild(renderStation(s)); }
+    else { c.innerHTML = `<div class="panel">目前沒有救護站,請於左側「＋ 新增救護站」。</div>`; }
+  }
+}
+
+/* ---------- 單一救護站 ---------- */
+function renderStation(s){
+  const p = document.createElement("div");
+  p.className = "panel";
+
+  /* 標題與基本資料 */
+  const head = document.createElement("div");
+  head.className = "station-head";
+  if(!editMode){
+    head.innerHTML = `
+      <div class="title-wrap">
+        <h2>${esc(s.name)} ${s.tag?`<span class="tag">${esc(s.tag)}</span>`:""}</h2>
+        <div class="meta">
+          <div class="item"><b>地點</b>${esc(s.location||"—")}</div>
+          <div class="item"><b>站長 / 負責人</b>${esc(s.supervisor||"—")}</div>
+          <div class="item"><b>聯絡電話</b>${esc(s.phone||"—")}</div>
+        </div>
+      </div>`;
+  } else {
+    head.innerHTML = `<div class="title-wrap" style="width:100%">
+      <div class="field-grid">
+        <div><label>救護站名稱</label></div><div><label>類別標籤</label></div>
+      </div>
+      <div class="field-grid" style="margin-bottom:14px">
+        <input class="f" id="f-name" value="${esc(s.name)}">
+        <input class="f" id="f-tag" value="${esc(s.tag||"")}">
+      </div>
+      <div class="field-grid">
+        <div><label>地點</label></div><div><label>站長 / 負責人</label></div>
+      </div>
+      <div class="field-grid" style="margin-bottom:14px">
+        <input class="f" id="f-loc" value="${esc(s.location||"")}">
+        <input class="f" id="f-sup" value="${esc(s.supervisor||"")}">
+      </div>
+      <div class="field-grid">
+        <div><label>聯絡電話</label></div><div></div>
+      </div>
+      <div class="field-grid">
+        <input class="f" id="f-phone" value="${esc(s.phone||"")}">
+      </div>
+    </div>`;
+    head.querySelector("#f-name").oninput  = e=> s.name = e.target.value;
+    head.querySelector("#f-tag").oninput   = e=> s.tag = e.target.value;
+    head.querySelector("#f-loc").oninput   = e=> s.location = e.target.value;
+    head.querySelector("#f-sup").oninput   = e=> s.supervisor = e.target.value;
+    head.querySelector("#f-phone").oninput = e=> s.phone = e.target.value;
+  }
+  p.appendChild(head);
+
+  /* 班表 */
+  const st = document.createElement("div");
+  st.className = "section-title"; st.textContent = "每週值班班表";
+  p.appendChild(st);
+
+  const scroll = document.createElement("div");
+  scroll.className = "table-scroll";
+  const table = document.createElement("table");
+
+  const thead = document.createElement("thead");
+  let hrow = `<th>班別 / 時段</th>`;
+  WEEK.forEach((w,i)=> hrow += `<th class="${i>=5?'weekend':''}">${w}</th>`);
+  thead.innerHTML = `<tr>${hrow}</tr>`;
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  (s.rows||[]).forEach((row,ri)=>{
+    const tr = document.createElement("tr");
+    if(!editMode){
+      let cells = `<td class="shift"><span class="sname">${esc(row.label)}</span>
+        <span class="stime">${esc(row.time||"")}</span></td>`;
+      (row.cells||[]).forEach((c,i)=> cells += `<td class="${i>=5?'weekend':''}"><span class="person">${esc(c||"—")}</span></td>`);
+      tr.innerHTML = cells;
+    } else {
+      const td0 = document.createElement("td"); td0.className="shift";
+      td0.innerHTML = `<input class="f" style="margin-bottom:6px" value="${esc(row.label)}" placeholder="班別">
+        <input class="f" value="${esc(row.time||"")}" placeholder="時段">`;
+      const ins = td0.querySelectorAll("input");
+      ins[0].oninput = e=> row.label = e.target.value;
+      ins[1].oninput = e=> row.time = e.target.value;
+      tr.appendChild(td0);
+      WEEK.forEach((w,i)=>{
+        const td = document.createElement("td"); if(i>=5) td.className="weekend";
+        const inp = document.createElement("input");
+        inp.className = "f cell-in"; inp.value = (row.cells&&row.cells[i])||"";
+        inp.oninput = e=>{ if(!row.cells) row.cells=[]; row.cells[i]=e.target.value; };
+        td.appendChild(inp); tr.appendChild(td);
+      });
+    }
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  scroll.appendChild(table);
+  p.appendChild(scroll);
+
+  if(editMode){
+    const tools = document.createElement("div"); tools.className="row-tools";
+    const add = document.createElement("button"); add.className="mini-btn"; add.textContent="＋ 新增班別";
+    add.onclick = ()=>{ s.rows.push({label:"新班別",time:"",cells:Array(7).fill("")}); render(); };
+    const del = document.createElement("button"); del.className="mini-btn danger"; del.textContent="－ 刪除最後一列班別";
+    del.onclick = ()=>{ if(s.rows.length){ s.rows.pop(); render(); } };
+    tools.appendChild(add); tools.appendChild(del);
+    p.appendChild(tools);
+  }
+
+  /* 備註 */
+  const nt = document.createElement("div");
+  nt.className = "section-title"; nt.textContent = "本站備註";
+  nt.style.marginTop = "26px";
+  p.appendChild(nt);
+  if(!editMode){
+    const box = document.createElement("div"); box.className="note-box";
+    box.textContent = s.note || "（無備註）";
+    p.appendChild(box);
+  } else {
+    const ta = document.createElement("textarea"); ta.className="f"; ta.value = s.note||"";
+    ta.oninput = e=> s.note = e.target.value;
+    p.appendChild(ta);
+  }
+  return p;
+}
+
+/* ---------- 管理規定 ---------- */
+function renderRules(){
+  const p = document.createElement("div");
+  p.className = "panel";
+  const h = document.createElement("div");
+  h.className = "station-head";
+  h.innerHTML = `<div class="title-wrap"><h2>管理規定 <span class="tag">適用全體救護站</span></h2>
+    <div class="meta"><div class="item"><b>性質</b>各工區救護站人員共同遵循之規範</div></div></div>`;
+  p.appendChild(h);
+
+  (STATE.regulations||[]).forEach((sec,si)=>{
+    const wrap = document.createElement("div"); wrap.className="reg-section";
+    const title = document.createElement("div"); title.className="section-title";
+    if(!editMode){ title.textContent = sec.title; }
+    else{
+      const inp = document.createElement("input"); inp.className="f"; inp.value=sec.title;
+      inp.style.maxWidth="420px"; inp.oninput=e=>sec.title=e.target.value;
+      title.appendChild(inp);
+      const rm = document.createElement("button"); rm.className="mini-btn danger"; rm.textContent="刪除整節";
+      rm.style.marginLeft="10px";
+      rm.onclick=()=>{ STATE.regulations.splice(si,1); render(); };
+      title.appendChild(rm);
+    }
+    wrap.appendChild(title);
+
+    const ul = document.createElement("ul"); ul.className="reg-list";
+    (sec.items||[]).forEach((it,ii)=>{
+      const li = document.createElement("li");
+      const num = document.createElement("span"); num.className="num"; num.textContent=ii+1;
+      li.appendChild(num);
+      if(!editMode){
+        const span = document.createElement("span"); span.textContent=it; span.style.flex="1";
+        li.appendChild(span);
+      } else {
+        const inp = document.createElement("input"); inp.className="f"; inp.value=it;
+        inp.oninput=e=>sec.items[ii]=e.target.value;
+        li.appendChild(inp);
+        const rm = document.createElement("button"); rm.className="mini-btn danger"; rm.textContent="✕";
+        rm.style.marginLeft="6px"; rm.onclick=()=>{ sec.items.splice(ii,1); render(); };
+        li.appendChild(rm);
+      }
+      ul.appendChild(li);
+    });
+    wrap.appendChild(ul);
+
+    if(editMode){
+      const add = document.createElement("button"); add.className="mini-btn"; add.textContent="＋ 新增條目";
+      add.style.marginTop="10px";
+      add.onclick=()=>{ sec.items.push("新條目"); render(); };
+      wrap.appendChild(add);
+    }
+    p.appendChild(wrap);
+  });
+
+  if(editMode){
+    const add = document.createElement("button"); add.className="btn"; add.textContent="＋ 新增規定章節";
+    add.onclick=()=>{ STATE.regulations.push({title:"新章節",items:["新條目"]}); render(); };
+    p.appendChild(add);
+  }
+  return p;
+}
+
+/* ---------- 編輯模式 ---------- */
+function toggleEdit(){
+  editMode = !editMode;
+  document.body.classList.toggle("editing", editMode);
+  const btn = document.getElementById("edit-toggle");
+  btn.classList.toggle("warm", editMode);
+  btn.innerHTML = editMode
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> 完成編輯`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> 編輯`;
+  /* 公司名稱於編輯模式可改 */
+  const co = document.getElementById("co-name");
+  co.contentEditable = editMode;
+  co.style.outline = editMode ? "1px dashed var(--teal)" : "none";
+  co.style.borderRadius = "6px"; co.style.padding = editMode? "0 4px":"0";
+  if(editMode){ co.oninput = ()=> STATE.company.name = co.textContent.trim(); }
+  render();
+}
+
+/* ---------- 新增 / 刪除救護站 ---------- */
+function addStation(){
+  const id = "st-" + Date.now().toString(36);
+  STATE.stations.push({
+    id, name:"新工區救護站", tag:"駐站", location:"", supervisor:"", phone:"", note:"",
+    rows:[ {label:"日班",time:"08:00 – 20:00",cells:Array(7).fill("")},
+           {label:"夜班",time:"20:00 – 08:00",cells:Array(7).fill("")} ]
+  });
+  current = { type:"station", id };
+  if(!editMode) toggleEdit(); else render();
+}
+function removeStation(id){
+  if(!confirm("確定要刪除此救護站?此動作無法復原。")) return;
+  STATE.stations = STATE.stations.filter(s=>s.id!==id);
+  if(current.id===id) current = STATE.stations.length ? {type:"station",id:STATE.stations[0].id} : {type:"rules"};
+  render();
+}
+
+/* ---------- 下載:把目前資料寫回成全新 HTML 檔 ---------- */
+function downloadHTML(){
+  const wasEdit = editMode;
+  if(wasEdit) toggleEdit();              // 先回到檢視模式,讓輸出乾淨
+  const clone = document.documentElement.cloneNode(true);
+  // 寫入最新資料
+  clone.querySelector("#seed-data").textContent = "\n" + JSON.stringify(STATE,null,2) + "\n";
+  // 還原公司名稱顯示
+  const co = clone.querySelector("#co-name"); if(co){ co.removeAttribute("contenteditable"); co.textContent = STATE.company.name; }
+  const sub = clone.querySelector("#co-sub"); if(sub) sub.textContent = STATE.company.subtitle||"";
+  const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  a.href = url; a.download = `怡安救護站_班表_${stamp}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  if(wasEdit) toggleEdit();              // 還原編輯狀態
+}
+
+/* ---------- 小工具 ---------- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,
+  m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m])); }
+
+/* ---------- 啟動 ---------- */
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadState();
+  document.getElementById("co-name").textContent = STATE.company.name || "怡安救護站";
+  document.getElementById("co-sub").textContent  = STATE.company.subtitle || "";
+  setToday();
+  render();
+});
+</script>
+</body>
+</html>
